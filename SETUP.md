@@ -67,9 +67,14 @@ Anonix Gateway sits between **consumers** (partner apps, internal analytics tool
 
 ---
 
-## 4. Scenario 1: Bundled Docker Compose (Fastest End-to-End Stack)
+## 4. Scenario 1: Bundled Docker Compose (Fastest Production-Like Stack)
 
-This starts PostgreSQL, Redis, Anonix Gateway (serving both the API and React Admin Console), and optionally a mock `demo-upstream` student/hospital API.
+Running `docker compose up -d` (without any profile flags) starts the **3 core services**:
+* `postgres` (PostgreSQL 16)
+* `redis` (Redis 7)
+* `gateway` (Anonix Gateway API + React Admin Console)
+
+It does **not** start the mock demo upstream—you point `/proxy/*` at your own real internal APIs or use `POST /v1/mask` directly.
 
 ### Linux / macOS
 ```bash
@@ -77,30 +82,31 @@ git clone https://github.com/lovepop1/Anonix-gateway.git
 cd Anonix-gateway
 cp .env.example .env
 
-# Start Postgres + Redis + Gateway + Demo Upstream
-docker compose --profile demo up -d --build
+# Start Postgres + Redis + Gateway
+docker compose up -d --build
 docker compose ps
 ```
 
 ### Windows (PowerShell)
-> **Important for Windows:** Hyper-V / WinNAT often reserves ports `8000` and `8080`. Override them with `ANONIX_PORT` and `ANONIX_DEMO_PORT` if binding fails:
+> **Important for Windows:** Hyper-V / WinNAT often reserves ports `8000` and `8080`. Override `ANONIX_PORT` if binding fails:
 ```powershell
 git clone https://github.com/lovepop1/Anonix-gateway.git
 cd Anonix-gateway
 copy .env.example .env
 
 $env:ANONIX_PORT="9000"
-$env:ANONIX_DEMO_PORT="9080"
 
-docker compose --profile demo up -d --build
+docker compose up -d --build
 docker compose ps
 ```
+
+*(Optional: If you don't have an internal API handy yet and want a mock `/students/{id}` backend to test `/proxy/*` against, add `--profile demo`: `docker compose --profile demo up -d --build`.)*
 
 ### Verify
 * `http://localhost:8000/healthz` (or `:9000/healthz`) $\rightarrow$ `{"status":"ok","version":"0.1.0"}`
 * `http://localhost:8000` (or `:9000`) $\rightarrow$ Opens the **First-Run Setup Wizard** (`/setup`).
-* Stop & keep data: `docker compose --profile demo down`
-* Stop & wipe volumes (fresh reset): `docker compose --profile demo down -v`
+* Stop & keep data: `docker compose down`
+* Stop & wipe volumes (fresh reset): `docker compose down -v` *(add `--profile demo` if you started the optional demo)*
 
 ---
 
