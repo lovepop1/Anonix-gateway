@@ -12,7 +12,7 @@ While [`anonix`](https://github.com/lovepop1/Datamasking-Core) provides the pure
 
 1. **Zero-Code API Protection (`/proxy/{prefix}/*`):** Sit Anonix in front of existing internal REST APIs. External consumers call Anonix; Anonix fetches raw responses from the internal upstream, masks them in RAM for the caller's role, and returns only safe data.
 2. **Language-Agnostic Masking Service (`POST /v1/mask`):** Java, Node.js, Go, PHP, ETL, and AI/LLM pipelines send raw payloads and receive masked output on the fly.
-3. **Web Admin Console (Moodle-Inspired Self-Hosted Control Plane):** First-run `/setup` wizard (zero hardcoded default passwords), versioned policy editor, Live Policy Playground, Auth Providers, Group Mappings, API Keys, Upstreams, Proxy Routes, and a Zero-PII Audit Log.
+3. **Self-Hosted Web Admin Console:** First-run `/setup` wizard (zero hardcoded default passwords), versioned policy editor, Live Policy Playground, Auth Providers, Group Mappings, API Keys, Upstreams, Proxy Routes, and a Zero-PII Audit Log.
 4. **Full Infrastructure & Auth Autonomy:** Run with bundled Docker PostgreSQL + Redis, **BYOD PostgreSQL** (`ANONIX_DATABASE_URL`), or zero-setup local SQLite; authenticate callers via **OIDC/JWT**, **API Keys**, and/or **Trusted-Proxy Headers**.
 
 ---
