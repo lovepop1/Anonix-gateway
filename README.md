@@ -9,7 +9,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
 
-Powered by [`anonix`](https://pypi.org/project/anonix/) · [Architecture](docs/architecture.md) · [Deployment & Setup](docs/deployment.md) · [Policy & `anonix` Guide](docs/policies.md) · [Auth Guide](docs/authentication.md) · [API Reference](docs/api-reference.md)
+Powered by [`anonix`](https://pypi.org/project/anonix/) · [Complete Setup Guide](SETUP.md) · [Architecture](docs/architecture.md) · [Policy & `anonix` Guide](docs/policies.md) · [Auth Guide](docs/authentication.md) · [API Reference](docs/api-reference.md)
 
 </div>
 
@@ -108,8 +108,9 @@ anonix-gateway/
 
 ## Documentation & Examples
 
+* [**Complete Setup & Operations Guide (`SETUP.md`)**](SETUP.md) — Step-by-step zero-to-production guide for Bundled Docker, Enterprise BYOD, PyPI CLI, TLS, Multi-Tenant, and Troubleshooting
 * [**Architecture & Security Model**](docs/architecture.md) — Request lifecycle, 3 security planes, RBAC, SSRF guard, and fail-closed guarantees
-* [**Deployment, Configuration & Setup Guide**](docs/deployment.md) — Complete `ANONIX_*` reference + Bundled Docker, Enterprise BYOD, PyPI CLI, and TLS scenarios
+* [**Deployment & BYOD Quick Reference**](docs/deployment.md) — Condensed deployment checklist
 * [**Policy Authoring & `anonix` Reference**](docs/policies.md) — `MaskingPolicy` schema, JSONPath/XPath selectors, all 10 built-in techniques, roles, and versioning
 * [**Authentication & Authorization Guide**](docs/authentication.md) — OIDC/JWT, API Keys, Trusted-Proxy headers, and Group Mappings
 * [**API Reference**](docs/api-reference.md) — Data Plane (`/v1/mask`, `/proxy/*`) and Control Plane (`/api/admin/*`) endpoints
