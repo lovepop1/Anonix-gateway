@@ -77,4 +77,7 @@ Anonix Gateway separates **administration (Control Plane)** from **runtime maski
 * **Gateway Database (Zero Business PII):** Stores `Tenant`, `AdminUser`, `AuthProvider`, `MaskingPolicy`, `PolicyVersion`, `GroupMapping`, `ApiKey`, `Upstream`, `ProxyRoute`, and `AuditEvent`.
   * Supports **PostgreSQL** (`postgresql+asyncpg://...`) for multi-replica production and **SQLite** (`sqlite+aiosqlite:///./data/anonix.db`) for zero-config single-node CLI usage.
 * **Tenancy:** Defaults to `ANONIX_TENANCY_MODE=single_org` (`default` tenant), while retaining `tenant_id` across all tables so `multi_tenant` (`X-Anonix-Tenant`) can be enabled without schema migration.
-* **Rate Limiting & JWKS Cache:** Backed by Redis (`ANONIX_REDIS_URL`) for multi-replica deployments (`ANONIX_RATE_LIMIT_PER_MINUTE`, default `120`), automatically falling back to an in-memory store when Redis is omitted.
+* **Rate Limiting & In-Memory Caches:**
+  * **Rate Limiting:** Fixed-window per-minute counter (`ANONIX_RATE_LIMIT_PER_MINUTE`, default `120`). Uses Redis (`ANONIX_REDIS_URL`) when configured for shared multi-replica enforcement, automatically falling back to an in-memory store when Redis is omitted.
+  * **Compiled `MaskingEngine` Cache:** Thread-safe in-memory LRU cache (`_MAX_ENGINES = 256`) keyed by `(policy_id, version_number, salt_digest)`.
+  * **OIDC JWKS Cache:** In-memory TTL cache (`300s`) per `jwks_url` with automatic one-shot refresh on key rotation.

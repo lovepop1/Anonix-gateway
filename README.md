@@ -27,7 +27,7 @@ Powered by [`anonix`](https://pypi.org/project/anonix/) · [Complete Setup Guide
 | **Direct Masking API (`POST /v1/mask`)** | Language-agnostic masking endpoint for Java, Node.js, Go, PHP, ETL pipelines, and AI/LLM workflows. |
 | **Multi-Mode Inbound Auth** | Enable **OIDC/JWT** (Okta, Google, Entra ID, Keycloak), scoped **API Keys**, and/or **Trusted-Proxy Headers** (NGINX, Kong, ALB) simultaneously. |
 | **Web Admin Console** | Built-in React console with first-run `/setup` wizard, policy versioning & rollback, Live Policy Playground, RBAC (`platform_admin`, `policy_author`, `auditor`), and Zero-PII Audit Log. |
-| **Deployment Flexibility** | Run via **Docker Compose** (bundled Postgres + Redis + optional Caddy TLS), **Enterprise BYOD Postgres** (`docker-compose.byod.yml`), or **PyPI CLI** (`pip install anonix-gateway`) with automatic SQLite. |
+| **Deployment Flexibility** | Run via **Docker Compose** (bundled Postgres + optional Redis & Caddy TLS), **Enterprise BYOD Postgres** (`docker-compose.byod.yml`), or **PyPI CLI** (`pip install anonix-gateway`) with automatic SQLite. |
 
 ---
 
@@ -65,21 +65,24 @@ anonix-gateway serve
 ```
 Open **`http://localhost:8000`** to sign in to the Admin Console.
 
-### 2. Docker Compose (Bundled Postgres + Redis)
+### 2. Docker Compose (Bundled Postgres + Gateway)
 ```bash
 git clone https://github.com/lovepop1/Anonix-gateway.git
 cd Anonix-gateway
 cp .env.example .env
 docker compose up -d
 ```
+* **Add Bundled Redis (multi-replica rate limiting):** `docker compose -f docker-compose.yml -f docker-compose.redis.yml up -d`
 * **Automatic HTTPS (Caddy):** `ANONIX_DOMAIN=mask.example.com docker compose --profile tls up -d`
 * **With Mock Demo Upstream:** `docker compose --profile demo up -d`
 
-### 3. Enterprise BYOD (Bring Your Own Postgres / Redis)
+### 3. Enterprise BYOD (Bring Your Own Postgres / Optional Redis)
 ```bash
 anonix-gateway keygen >> .env
 # Set ANONIX_DATABASE_URL (and optionally ANONIX_REDIS_URL) in .env
 docker compose -f docker-compose.byod.yml up -d
+# Or pair BYOD Postgres with bundled Docker Redis:
+docker compose -f docker-compose.byod.yml -f docker-compose.redis.yml up -d
 ```
 
 ---

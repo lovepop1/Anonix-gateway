@@ -51,8 +51,8 @@ Anonix Gateway sits between **consumers** (partner apps, internal analytics tool
 
 | Scenario | Database | Cache / Rate Limit | Best For | Jump To |
 | :--- | :--- | :--- | :--- | :--- |
-| **1. Bundled Docker Compose** | Bundled Postgres 16 | Bundled Redis 7 | Evaluation, demos, single-host Docker | [Scenario 1](#4-scenario-1-bundled-docker-compose-fastest-end-to-end-stack) |
-| **2. Enterprise BYOD** | Your RDS / Cloud SQL / Postgres | Your Redis *(or in-memory)* | Production, Kubernetes, HA replicas | [Scenario 2](#5-scenario-2-enterprise-byod-your-existing-postgresql--redis) |
+| **1. Bundled Docker Compose** | Bundled Postgres 16 | Built-in in-memory *(or `+ docker-compose.redis.yml`)* | Single-host Docker, evaluation, demos | [Scenario 1](#4-scenario-1-bundled-docker-compose-fastest-production-like-stack) |
+| **2. Enterprise BYOD** | Your RDS / Cloud SQL / Postgres | Built-in in-memory, your Redis, or `+ docker-compose.redis.yml` | Production, Kubernetes, HA replicas | [Scenario 2](#5-scenario-2-enterprise-byod-your-existing-postgresql--redis) |
 | **3. PyPI CLI (No Docker)** | Auto SQLite `./data/anonix.db` *(or Postgres)* | Built-in in-memory *(or Redis)* | Single VM, air-gapped hosts, quick local use | [Scenario 3](#6-scenario-3-single-node-pypi-cli-no-docker) |
 | **4. Production TLS** | Any of the above | Any of the above | Public/internal HTTPS endpoints | [Scenario 4](#7-scenario-4-production-https--tls-3-options) |
 | **5. Multi-Tenant** | Postgres *(recommended)* | Redis *(recommended)* | SaaS / isolated business units (`X-Anonix-Tenant`) | [Scenario 5](#8-scenario-5-multi-tenant-mode) |
@@ -69,12 +69,13 @@ Anonix Gateway sits between **consumers** (partner apps, internal analytics tool
 
 ## 4. Scenario 1: Bundled Docker Compose (Fastest Production-Like Stack)
 
-Running `docker compose up -d` (without any profile flags) starts the **3 core services**:
+Running `docker compose up -d` starts the **2 core services** with built-in in-memory rate limiting:
 * `postgres` (PostgreSQL 16)
-* `redis` (Redis 7)
 * `gateway` (Anonix Gateway API + React Admin Console)
 
-It does **not** start the mock demo upstream—you point `/proxy/*` at your own real internal APIs or use `POST /v1/mask` directly.
+It does **not** start Redis or the mock demo upstream by default:
+* **Need multi-replica shared rate limiting?** Add `-f docker-compose.redis.yml` to include bundled Redis 7.
+* **Want a mock `/students/{id}` test API?** Add `--profile demo`.
 
 ### Linux / macOS
 ```bash
@@ -138,7 +139,11 @@ ANONIX_ALLOW_PRIVATE_UPSTREAMS=true
 
 ### Step 3: Start the Gateway
 ```bash
+# BYOD Postgres + in-memory rate limiting (or external ANONIX_REDIS_URL in .env):
 docker compose -f docker-compose.byod.yml up -d --build
+
+# OR BYOD Postgres + bundled Docker Redis:
+docker compose -f docker-compose.byod.yml -f docker-compose.redis.yml up -d --build
 ```
 Schema tables are initialized automatically on boot. For controlled CI/CD rollouts across multiple replicas, run `alembic upgrade head` once before starting the new replica set.
 
@@ -280,7 +285,7 @@ Once the gateway is running, open `http://localhost:8000` (or your configured po
 | `ANONIX_LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR`. |
 | `ANONIX_TENANCY_MODE` | `single_org` | `single_org` or `multi_tenant`. |
 | `ANONIX_DATABASE_URL` | *(SQLite in `data_dir`)* | Async DB URL (`postgresql+asyncpg://...` or `sqlite+aiosqlite:///...`). |
-| `ANONIX_REDIS_URL` | *(empty)* | Optional `redis://host:6379/0` for shared rate limits & JWKS cache. |
+| `ANONIX_REDIS_URL` | *(empty)* | Optional `redis://host:6379/0` for shared multi-replica rate limits. Omit for in-memory rate limiting. |
 | `ANONIX_MASTER_KEY` | *(auto in dev)* | Fernet key for encrypting upstream & OIDC secrets. |
 | `ANONIX_ADMIN_JWT_SECRET` | *(auto in dev)* | HS256 secret for admin console JWTs. |
 | `ANONIX_DATA_DIR` | `./data` | Local folder for SQLite DB and dev `.anonix_secrets.json`. |

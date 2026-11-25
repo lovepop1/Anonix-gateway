@@ -16,7 +16,7 @@ All settings can be passed as environment variables or placed in a `.env` file:
 | `ANONIX_LOG_LEVEL` | `INFO` | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). |
 | `ANONIX_TENANCY_MODE` | `single_org` | `single_org` (default) or `multi_tenant` (`X-Anonix-Tenant`). |
 | `ANONIX_DATABASE_URL` | *(SQLite)* | Async SQLAlchemy URL. Leave blank for `./data/anonix.db`, or set `postgresql+asyncpg://user:pass@host:5432/db`. |
-| `ANONIX_REDIS_URL` | *(empty)* | Optional `redis://host:6379/0` for shared rate limiting & JWKS cache across replicas. Omit for built-in in-memory fallback. |
+| `ANONIX_REDIS_URL` | *(empty)* | Optional `redis://host:6379/0` for shared rate limiting across multiple gateway replicas. Omit for built-in in-memory rate limiting. |
 | `ANONIX_MASTER_KEY` | *(auto in dev)* | Fernet key encrypting upstream credentials & OIDC client secrets. Generate with `anonix-gateway keygen`. |
 | `ANONIX_ADMIN_JWT_SECRET` | *(auto in dev)* | HS256 signing secret for Control Plane admin JWTs. Generate with `anonix-gateway keygen`. |
 | `ANONIX_DATA_DIR` | `./data` | Directory for SQLite DB and auto-generated dev `.anonix_secrets.json`. |
@@ -33,17 +33,20 @@ All settings can be passed as environment variables or placed in a `.env` file:
 
 ---
 
-## 2. Scenario A: Full Bundled Docker Compose (Fastest Evaluation)
+## 2. Option A: Bundled Docker Compose (Fastest)
 
-Starts **PostgreSQL 16**, **Redis 7**, **Anonix Gateway**, and optionally the **Mock Demo Upstream** (`demo-upstream` serving `/students/{id}`):
+Starts **PostgreSQL 16** and **Anonix Gateway** (serving both the API and React Admin Console on port `8000`) with built-in in-memory rate limiting:
 
 ```bash
 git clone https://github.com/lovepop1/Anonix-gateway.git
 cd Anonix-gateway
 cp .env.example .env
 
-# Standard ports (8000 / 8080):
-docker compose --profile demo up -d --build
+# Postgres + Gateway (default):
+docker compose up -d --build
+
+# Optional: add bundled Redis for multi-replica rate limiting:
+docker compose -f docker-compose.yml -f docker-compose.redis.yml up -d --build
 ```
 
 > **Windows Note:** If ports `8000` or `8080` are reserved by Hyper-V/WinNAT, override them in PowerShell before `docker compose up`:
@@ -79,7 +82,11 @@ Use `docker-compose.byod.yml` when your organization runs managed PostgreSQL (AW
    ```
 4. **Run the gateway container:**
    ```bash
+   # BYOD Postgres + built-in in-memory rate limiting (or external ANONIX_REDIS_URL):
    docker compose -f docker-compose.byod.yml up -d
+
+   # OR BYOD Postgres + bundled Docker Redis:
+   docker compose -f docker-compose.byod.yml -f docker-compose.redis.yml up -d
    ```
    Tables are created automatically on startup (or you can run `alembic upgrade head` explicitly in CI/CD before rolling out replicas).
 
