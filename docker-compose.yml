@@ -1,0 +1,68 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-anonix}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-anonix_local_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-anonix}
+    volumes:
+      - anonix_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-anonix} -d ${POSTGRES_DB:-anonix}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${ANONIX_PORT:-8000}:8000"
+    environment:
+      ANONIX_ENV: ${ANONIX_ENV:-development}
+      ANONIX_TENANCY_MODE: ${ANONIX_TENANCY_MODE:-single_org}
+      ANONIX_DATABASE_URL: ${ANONIX_DATABASE_URL:-postgresql+asyncpg://anonix:anonix_local_dev@postgres:5432/anonix}
+      ANONIX_REDIS_URL: ${ANONIX_REDIS_URL:-redis://redis:6379/0}
+      ANONIX_MASTER_KEY: ${ANONIX_MASTER_KEY:-}
+      ANONIX_ADMIN_JWT_SECRET: ${ANONIX_ADMIN_JWT_SECRET:-}
+      ANONIX_ALLOW_PRIVATE_UPSTREAMS: ${ANONIX_ALLOW_PRIVATE_UPSTREAMS:-true}
+      ANONIX_BOOTSTRAP_ADMIN_EMAIL: ${ANONIX_BOOTSTRAP_ADMIN_EMAIL:-}
+      ANONIX_BOOTSTRAP_ADMIN_PASSWORD: ${ANONIX_BOOTSTRAP_ADMIN_PASSWORD:-}
+      ANONIX_BOOTSTRAP_ORG_NAME: ${ANONIX_BOOTSTRAP_ORG_NAME:-Default Organization}
+    volumes:
+      - anonix_gateway_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  demo-upstream:
+    profiles: ["demo"]
+    build:
+      context: ./demo_upstream
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+
+volumes:
+  anonix_pg_data:
+  anonix_gateway_data:

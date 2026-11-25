@@ -1,0 +1,26 @@
+# Enterprise BYOD (Bring Your Own Database / Redis) Compose file.
+# Usage: docker compose -f docker-compose.byod.yml up -d
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${ANONIX_PORT:-8000}:8000"
+    environment:
+      ANONIX_ENV: ${ANONIX_ENV:-production}
+      ANONIX_TENANCY_MODE: ${ANONIX_TENANCY_MODE:-single_org}
+      ANONIX_DATABASE_URL: ${ANONIX_DATABASE_URL:?Set ANONIX_DATABASE_URL to your Postgres instance}
+      ANONIX_REDIS_URL: ${ANONIX_REDIS_URL:-}
+      ANONIX_MASTER_KEY: ${ANONIX_MASTER_KEY:?Set ANONIX_MASTER_KEY}
+      ANONIX_ADMIN_JWT_SECRET: ${ANONIX_ADMIN_JWT_SECRET:?Set ANONIX_ADMIN_JWT_SECRET}
+      ANONIX_ALLOW_PRIVATE_UPSTREAMS: ${ANONIX_ALLOW_PRIVATE_UPSTREAMS:-true}
+      ANONIX_BOOTSTRAP_ADMIN_EMAIL: ${ANONIX_BOOTSTRAP_ADMIN_EMAIL:-}
+      ANONIX_BOOTSTRAP_ADMIN_PASSWORD: ${ANONIX_BOOTSTRAP_ADMIN_PASSWORD:-}
+      ANONIX_BOOTSTRAP_ORG_NAME: ${ANONIX_BOOTSTRAP_ORG_NAME:-Default Organization}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
