@@ -63,6 +63,26 @@ services:
     ports:
       - "8080:8080"
 
+  caddy:
+    profiles: ["tls"]
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      ANONIX_DOMAIN: ${ANONIX_DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - anonix_caddy_data:/data
+      - anonix_caddy_config:/config
+    depends_on:
+      gateway:
+        condition: service_healthy
+
 volumes:
   anonix_pg_data:
   anonix_gateway_data:
+  anonix_caddy_data:
+  anonix_caddy_config:
