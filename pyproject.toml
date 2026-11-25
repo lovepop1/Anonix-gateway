@@ -65,8 +65,12 @@ dev = [
 [project.scripts]
 anonix-gateway = "anonix_gateway.cli:app"
 
+[tool.hatch.build.targets.sdist]
+artifacts = ["src/anonix_gateway/static/**"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/anonix_gateway"]
+artifacts = ["src/anonix_gateway/static/**"]
 
 [tool.ruff]
 target-version = "py311"
