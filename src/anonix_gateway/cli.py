@@ -104,7 +104,9 @@ def serve(
     cert = ssl_certfile or settings.ssl_certfile
     key = ssl_keyfile or settings.ssl_keyfile
     if bool(cert) != bool(key):
-        raise typer.BadParameter("Both --ssl-certfile and --ssl-keyfile must be provided for HTTPS.")
+        raise typer.BadParameter(
+            "Both --ssl-certfile and --ssl-keyfile must be provided for HTTPS."
+        )
 
     uvicorn.run(
         "anonix_gateway.main:app",
