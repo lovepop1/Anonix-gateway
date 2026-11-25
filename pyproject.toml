@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "anonix-gateway"
-version = "0.1.0"
+version = "0.1.1"
 description = "Self-hosted on-the-fly data masking reverse proxy, API gateway, and admin control plane powered by anonix."
 readme = "README.md"
 requires-python = ">=3.11"
