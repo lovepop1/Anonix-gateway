@@ -72,9 +72,7 @@ def init(
                     admin_password=admin_password,
                     org_name=org_name,
                 )
-                typer.echo(
-                    f"Bootstrapped organization '{tenant.name}' with admin '{admin.email}'."
-                )
+                typer.echo(f"Bootstrapped organization '{tenant.name}' with admin '{admin.email}'.")
         await dispose_engine()
 
     asyncio.run(_run())

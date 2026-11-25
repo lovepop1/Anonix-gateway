@@ -124,9 +124,7 @@ async def reverse_proxy(
         authz = await resolve_group_mapping(session, identity)
         target_policy_id = authz.mapped_policy_id
     else:
-        authz = await resolve_group_mapping(
-            session, identity, target_policy_id=route.policy_id
-        )
+        authz = await resolve_group_mapping(session, identity, target_policy_id=route.policy_id)
         target_policy_id = route.policy_id
 
     policy, policy_version = await _load_active_policy(

@@ -120,9 +120,7 @@ async def test_oidc_jwt_auth_and_group_mapping(gateway_client: httpx.AsyncClient
     public_jwk["alg"] = "RS256"
 
     respx.get("https://idp.example.com/.well-known/openid-configuration").mock(
-        return_value=httpx.Response(
-            200, json={"jwks_uri": "https://idp.example.com/oauth2/jwks"}
-        )
+        return_value=httpx.Response(200, json={"jwks_uri": "https://idp.example.com/oauth2/jwks"})
     )
     respx.get("https://idp.example.com/oauth2/jwks").mock(
         return_value=httpx.Response(200, json={"keys": [public_jwk]})

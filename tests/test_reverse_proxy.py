@@ -33,7 +33,9 @@ def test_ssrf_blocks_metadata_and_private_when_disallowed() -> None:
     with pytest.raises(ValueError, match="SSRF"):
         validate_upstream_url("http://10.0.0.5:8080", allow_private=False)
 
-    assert validate_upstream_url("http://10.0.0.5:8080/", allow_private=True) == "http://10.0.0.5:8080"
+    assert (
+        validate_upstream_url("http://10.0.0.5:8080/", allow_private=True) == "http://10.0.0.5:8080"
+    )
 
 
 @respx.mock

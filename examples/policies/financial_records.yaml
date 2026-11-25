@@ -1,0 +1,10 @@
+version: '1.0'
+name: financial-records-policy
+description: Masks payment identifiers and account numbers for external analytics.
+rules:
+  - selector: '$.card_number'
+    technique: redact
+    roles: [analyst]
+  - selector: '$.iban'
+    technique: pseudonymize
+    roles: [analyst]

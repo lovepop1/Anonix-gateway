@@ -183,3 +183,58 @@ pre {
   overflow-x: auto;
   font-size: 12px;
 }
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+.action-cell {
+  display: flex;
+  gap: 6px;
+}
+
+.full-span {
+  grid-column: 1 / -1;
+}
+
+.info-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  margin-top: 10px;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.inline-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.inline-check.spaced {
+  margin-top: 10px;
+}
+
+.inline-check input[type="checkbox"] {
+  width: auto;
+}
+
+.ver-btn {
+  margin-right: 4px;
+}
+
+.muted-copy {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.brand-title {
+  margin: 0;
+}

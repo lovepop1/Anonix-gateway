@@ -133,8 +133,10 @@ async def mask_payload(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid JSON payload: {exc}",
             ) from exc
-        if isinstance(parsed, dict) and "payload" in parsed and (
-            "policy" in parsed or "policy_id" in parsed or requested_policy is None
+        if (
+            isinstance(parsed, dict)
+            and "payload" in parsed
+            and ("policy" in parsed or "policy_id" in parsed or requested_policy is None)
         ):
             env_policy = parsed.get("policy") or parsed.get("policy_id")
             if env_policy:

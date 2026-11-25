@@ -1,0 +1,13 @@
+version: '1.0'
+name: healthcare-ehr-policy
+description: Role-based masking for healthcare patient records (JSON/XML).
+rules:
+  - selector: '$.ssn'
+    technique: suppress
+    roles: [researcher, billing]
+  - selector: '$.email'
+    technique: redact
+    roles: [researcher]
+  - selector: '$.diagnosis'
+    technique: suppress
+    roles: [billing]

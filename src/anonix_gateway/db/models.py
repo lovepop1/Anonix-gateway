@@ -230,9 +230,7 @@ class ProxyRoute(Base):
     )
     blocked_subpaths: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     allow_policy_override: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    on_unstructured: Mapped[str] = mapped_column(
-        String(32), default="fail_closed", nullable=False
-    )
+    on_unstructured: Mapped[str] = mapped_column(String(32), default="fail_closed", nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, nullable=False
