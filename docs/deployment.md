@@ -113,13 +113,17 @@ anonix-gateway serve --port 8000
 
 ## 5. Scenario D: Production TLS & Edge Proxy Integration
 
-1. **Automatic HTTPS with Caddy (`--profile tls`):**
+See [SETUP.md — Scenario 4](../SETUP.md#7-scenario-4-production-https--tls-3-options) for the full TLS guide. Summary:
+
+1. **Automatic HTTPS with Caddy (`--profile tls` in `docker-compose.yml`):**
    ```bash
    ANONIX_DOMAIN=mask.company.com docker compose --profile tls up -d
    ```
-   Caddy automatically provisions and renews Let's Encrypt TLS 1.3 certificates and forwards to `gateway:8000`.
-2. **Behind NGINX / Kong / AWS ALB:**
-   Terminate TLS at your corporate load balancer, forward traffic to port `8000`, and (if your edge proxy already authenticates users) configure **Trusted-Proxy Headers**—see [`examples/nginx-trusted-proxy.conf`](../examples/nginx-trusted-proxy.conf) and [Authentication Guide](authentication.md).
+   Requires public DNS pointing to your host and ports `80`/`443` open for Let's Encrypt (otherwise Caddy falls back to an internal self-signed CA).
+2. **Behind NGINX / Kong / AWS ALB (recommended for Cloud, Kubernetes & BYOD):**
+   Terminate TLS at your load balancer, forward HTTP to `gateway:8000` (health check `/healthz` or `/readyz`), and optionally pass Trusted-Proxy headers—see [`examples/nginx-trusted-proxy.conf`](../examples/nginx-trusted-proxy.conf) and [Authentication Guide](authentication.md).
+3. **Direct Native TLS (standalone VM / PyPI CLI only):**
+   Pass `--ssl-certfile` and `--ssl-keyfile` to `anonix-gateway serve` (do not set these inside Docker Compose, as the container healthcheck probes `http://localhost:8000/healthz`).
 
 ---
 

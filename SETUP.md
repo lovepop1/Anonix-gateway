@@ -186,24 +186,53 @@ anonix-gateway serve --port 8000
 
 ## 7. Scenario 4: Production HTTPS / TLS (3 Options)
 
+Anonix Gateway supports three TLS termination patterns. Pick the one that matches your infrastructure:
+
+| Pattern | Best For | Where TLS Terminates | Works With |
+| :--- | :--- | :--- | :--- |
+| **Option A: Caddy (`--profile tls`)** | Single-server Docker with a public domain | Caddy container (ports `80`/`443`) $\rightarrow$ HTTP to `gateway:8000` | `docker-compose.yml` |
+| **Option B: Enterprise LB / Ingress** | AWS ALB, GCP LB, Kubernetes Ingress, NGINX, Kong | Corporate edge / LB $\rightarrow$ HTTP to `gateway:8000` | Docker, BYOD, or CLI |
+| **Option C: Direct Native TLS** | Standalone VMs / air-gapped hosts without a proxy | `anonix-gateway serve` (Uvicorn TLS directly) | PyPI CLI (`serve`) |
+
 ### Option A: Automatic Let's Encrypt HTTPS via Caddy (Single-Host Docker)
-```bash
-ANONIX_DOMAIN=mask.company.com docker compose --profile tls up -d
+`docker-compose.yml` includes an optional `caddy` service (`caddy:2-alpine`) using `Caddyfile`:
+```caddy
+{$ANONIX_DOMAIN:localhost} {
+    reverse_proxy gateway:8000
+}
 ```
-Uses `Caddyfile` (`{$ANONIX_DOMAIN:localhost} { reverse_proxy gateway:8000 }`) on ports `80` and `443`.
+1. Point your domain's DNS `A`/`AAAA` record (e.g. `mask.company.com`) to your Docker host's public IP and ensure inbound ports **`80`** and **`443`** are open (required for Let's Encrypt ACME verification).
+2. Start the stack with `--profile tls`:
+   ```bash
+   ANONIX_DOMAIN=mask.company.com docker compose --profile tls up -d
+   ```
+   *(Caddy automatically provisions and renews Let's Encrypt TLS certificates and persists them in the `anonix_caddy_data` volume.)*
+3. **Local / Internal Note:** If `ANONIX_DOMAIN` is left as `localhost` (or is unreachable from the internet), Caddy cannot obtain a Let's Encrypt cert and instead issues a certificate from Caddy's **internal self-signed CA** (browsers and `curl` will show an untrusted-cert warning unless you trust Caddy's local root CA).
+4. **Hardening Tip:** In production with Caddy, keep port `8000` bound only to localhost or firewalled so external clients must enter via HTTPS (`443`). *(Note: `caddy` is defined in `docker-compose.yml`, not `docker-compose.byod.yml`.)*
 
 ### Option B: Corporate Load Balancer / Ingress (AWS ALB, NGINX, Kong, Traefik)
-Terminate TLS at your load balancer and forward HTTP to Anonix Gateway on port `8000`.
-If your edge proxy also authenticates users and passes identity headers, see [`examples/nginx-trusted-proxy.conf`](examples/nginx-trusted-proxy.conf) and configure a **Trusted-Proxy** Auth Provider in the **AUTH** tab.
+Recommended for cloud, Kubernetes, and enterprise deployments where your organization manages wildcard/ACM/Vault certificates at the edge:
+1. Terminate HTTPS (`443`) at your load balancer or Ingress controller using your corporate certificate.
+2. Forward plain HTTP traffic over the private network/VPC to Anonix Gateway on port `8000`, and configure health checks against `GET /healthz` or `GET /readyz`.
+3. If your edge proxy also authenticates callers and injects identity headers (`X-Anonix-User`, `X-Anonix-Groups`, `X-Anonix-Proxy-Secret`), see [`examples/nginx-trusted-proxy.conf`](examples/nginx-trusted-proxy.conf) and configure a **Trusted-Proxy** provider in the **AUTH** tab.
 
-### Option C: Direct Native TLS on Gateway (No External Proxy)
+### Option C: Direct Native TLS on Gateway (Standalone VM / Air-Gapped Host)
+Use this when running `anonix-gateway serve` directly on a VM without Caddy, NGINX, or a cloud load balancer:
 ```bash
 anonix-gateway serve \
   --port 8443 \
   --ssl-certfile /etc/certs/fullchain.pem \
   --ssl-keyfile /etc/certs/privkey.pem
 ```
-Or set `ANONIX_SSL_CERTFILE` and `ANONIX_SSL_KEYFILE` in `.env`. Both must be provided together.
+Or set `ANONIX_SSL_CERTFILE` and `ANONIX_SSL_KEYFILE` in `.env` (both must be provided together; providing only one raises a CLI parameter error).
+
+For internal testing with a self-signed certificate:
+```bash
+openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 365 -subj "/CN=localhost"
+anonix-gateway serve --port 8443 --ssl-certfile cert.pem --ssl-keyfile key.pem
+```
+
+> **Docker Warning:** Do **not** set `ANONIX_SSL_CERTFILE`/`ANONIX_SSL_KEYFILE` inside `docker-compose.yml` or `docker-compose.byod.yml`. Their container healthcheck probes `http://localhost:8000/healthz` over plain HTTP, so switching Uvicorn to HTTPS inside the container will fail the healthcheck. Always use **Option A (Caddy)** or **Option B (External LB/Ingress)** for Docker deployments.
 
 ---
 
