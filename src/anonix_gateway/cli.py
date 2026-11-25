@@ -96,12 +96,21 @@ def migrate() -> None:
 def serve(
     host: str | None = typer.Option(None, help="Bind host override"),
     port: int | None = typer.Option(None, help="Bind port override"),
+    ssl_certfile: str | None = typer.Option(None, help="Path to TLS certificate file (PEM)"),
+    ssl_keyfile: str | None = typer.Option(None, help="Path to TLS private key file (PEM)"),
 ) -> None:
-    """Start the Anonix Gateway HTTP server."""
+    """Start the Anonix Gateway HTTP/HTTPS server."""
     settings = get_settings()
+    cert = ssl_certfile or settings.ssl_certfile
+    key = ssl_keyfile or settings.ssl_keyfile
+    if bool(cert) != bool(key):
+        raise typer.BadParameter("Both --ssl-certfile and --ssl-keyfile must be provided for HTTPS.")
+
     uvicorn.run(
         "anonix_gateway.main:app",
         host=host or settings.host,
         port=port or settings.port,
         log_level=settings.log_level.lower(),
+        ssl_certfile=cert,
+        ssl_keyfile=key,
     )

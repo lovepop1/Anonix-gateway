@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     bootstrap_org_name: str = "Default Organization"
 
     cors_origins: str = ""
+    ssl_certfile: str | None = None
+    ssl_keyfile: str | None = None
     allow_private_upstreams: bool = False
     admin_token_ttl_minutes: int = 480
     rate_limit_per_minute: int = 120

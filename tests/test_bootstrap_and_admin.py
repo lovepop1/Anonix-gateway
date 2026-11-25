@@ -15,10 +15,16 @@ async def test_health_and_readiness(gateway_client: httpx.AsyncClient) -> None:
     h = await gateway_client.get("/healthz")
     assert h.status_code == 200
     assert h.json()["status"] == "ok"
+    assert h.headers["x-content-type-options"] == "nosniff"
+    assert h.headers["x-frame-options"] == "DENY"
 
     r = await gateway_client.get("/readyz")
     assert r.status_code == 200
     assert r.json()["status"] == "ready"
+
+    s = await gateway_client.get("/api/setup/status")
+    assert s.status_code == 200
+    assert s.headers["cache-control"] == "no-store"
 
 
 async def test_bootstrap_once_and_login(gateway_client: httpx.AsyncClient) -> None:

@@ -6,10 +6,11 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import RequestResponseEndpoint
 
 from anonix_gateway import __version__
 from anonix_gateway.cache.rate_limit import reset_rate_limiter
@@ -61,6 +62,19 @@ def create_app() -> FastAPI:
             allow_methods=["*"],
             allow_headers=["*"],
         )
+
+    @app.middleware("http")
+    async def security_headers_middleware(
+        request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        path = request.url.path
+        if path.startswith(("/v1/", "/proxy/", "/api/")):
+            response.headers.setdefault("Cache-Control", "no-store")
+        return response
 
     app.include_router(health.router)
     app.include_router(setup.router)

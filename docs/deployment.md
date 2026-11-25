@@ -65,6 +65,8 @@ anonix-gateway serve --port 8000
 ## 4. Production Hardening Checklist
 
 * **Required in `ANONIX_ENV=production`:** Set both `ANONIX_MASTER_KEY` and `ANONIX_ADMIN_JWT_SECRET` via environment variables, Kubernetes Secrets, AWS Secrets Manager, or HashiCorp Vault. Startup fails closed if either is missing in production mode.
-* **TLS Termination:** Place your load balancer / reverse proxy (NGINX, Caddy, AWS ALB, Kubernetes Ingress) in front of port `8000` for HTTPS.
+* **HTTPS / TLS:** Either:
+  * **Native HTTPS:** Set `ANONIX_SSL_CERTFILE` and `ANONIX_SSL_KEYFILE` (or pass `--ssl-certfile` and `--ssl-keyfile` to `anonix-gateway serve`) to terminate TLS directly inside Anonix Gateway, **or**
+  * **Edge TLS Termination:** Place your load balancer / reverse proxy (NGINX, Caddy, AWS ALB, Kubernetes Ingress) in front of port `8000` for HTTPS.
 * **Upstream Firewall:** Ensure internal upstream APIs are reachable **only** from Anonix Gateway's subnet/IP so external callers cannot bypass masking.
 * **Probes:** Use `GET /healthz` (liveness) and `GET /readyz` (database readiness).
