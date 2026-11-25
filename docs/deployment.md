@@ -1,56 +1,93 @@
-# Deployment & BYOD Guide
+# Deployment, Configuration & Setup Guide
 
-Anonix Gateway supports three deployment models so organizations can start in seconds or integrate cleanly into existing enterprise infrastructure.
+Anonix Gateway can be deployed in four ways—from a 60-second Docker Compose stack with a built-in demo API, to an Enterprise BYOD setup wired into your existing PostgreSQL/Redis, to a standalone Python CLI.
 
 ---
 
-## 1. Option A: Bundled Docker Compose (Fastest)
+## 1. Environment Configuration Reference (`ANONIX_*`)
 
-Starts `postgres`, `redis`, and `gateway` (serving both the API and the React Admin Console on port `8000`):
+All settings can be passed as environment variables or placed in a `.env` file:
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `ANONIX_ENV` | `development` | `development` (auto-generates & persists keys in `ANONIX_DATA_DIR`) or `production` (fails closed if `ANONIX_MASTER_KEY` or `ANONIX_ADMIN_JWT_SECRET` is missing). |
+| `ANONIX_HOST` | `0.0.0.0` | Bind host for the ASGI server. |
+| `ANONIX_PORT` | `8000` | Listen port (Docker Compose maps `${ANONIX_PORT:-8000}:8000`). |
+| `ANONIX_LOG_LEVEL` | `INFO` | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). |
+| `ANONIX_TENANCY_MODE` | `single_org` | `single_org` (default) or `multi_tenant` (`X-Anonix-Tenant`). |
+| `ANONIX_DATABASE_URL` | *(SQLite)* | Async SQLAlchemy URL. Leave blank for `./data/anonix.db`, or set `postgresql+asyncpg://user:pass@host:5432/db`. |
+| `ANONIX_REDIS_URL` | *(empty)* | Optional `redis://host:6379/0` for shared rate limiting & JWKS cache across replicas. Omit for built-in in-memory fallback. |
+| `ANONIX_MASTER_KEY` | *(auto in dev)* | Fernet key encrypting upstream credentials & OIDC client secrets. Generate with `anonix-gateway keygen`. |
+| `ANONIX_ADMIN_JWT_SECRET` | *(auto in dev)* | HS256 signing secret for Control Plane admin JWTs. Generate with `anonix-gateway keygen`. |
+| `ANONIX_DATA_DIR` | `./data` | Directory for SQLite DB and auto-generated dev `.anonix_secrets.json`. |
+| `ANONIX_ALLOW_PRIVATE_UPSTREAMS` | `false` (`true` in Compose) | Allow `/proxy/*` to reach private/VPC/loopback upstream IPs. Cloud metadata IPs remain unconditionally blocked. |
+| `ANONIX_BOOTSTRAP_ADMIN_EMAIL` | *(empty)* | Optional headless first-run admin email (skips web `/setup` wizard). |
+| `ANONIX_BOOTSTRAP_ADMIN_PASSWORD` | *(empty)* | Optional headless first-run admin password (used with `ANONIX_BOOTSTRAP_ADMIN_EMAIL`). |
+| `ANONIX_BOOTSTRAP_ORG_NAME` | `Default Organization` | Organization name created during headless bootstrap. |
+| `ANONIX_ADMIN_TOKEN_TTL_MINUTES` | `480` | Admin console session JWT lifetime in minutes (8 hours). |
+| `ANONIX_RATE_LIMIT_PER_MINUTE` | `120` | Data-plane per-caller requests per minute. |
+| `ANONIX_MAX_PAYLOAD_BYTES` | `10485760` | Maximum inbound/upstream payload size in bytes (10 MiB). |
+| `ANONIX_CORS_ORIGINS` | *(empty)* | Comma-separated CORS origins (e.g. `http://localhost:5173` during frontend dev). |
+| `ANONIX_SSL_CERTFILE` / `ANONIX_SSL_KEYFILE` | *(empty)* | Paths to PEM certificate and private key for direct native HTTPS without a reverse proxy. |
+| `ANONIX_DOMAIN` | `localhost` | Domain used by Caddy (`--profile tls`) for automatic Let's Encrypt HTTPS. |
+
+---
+
+## 2. Scenario A: Full Bundled Docker Compose (Fastest Evaluation)
+
+Starts **PostgreSQL 16**, **Redis 7**, **Anonix Gateway**, and optionally the **Mock Demo Upstream** (`demo-upstream` serving `/students/{id}`):
 
 ```bash
+git clone https://github.com/lovepop1/Anonix-gateway.git
+cd Anonix-gateway
 cp .env.example .env
-docker compose up -d
+
+# Standard ports (8000 / 8080):
+docker compose --profile demo up -d --build
 ```
 
-Open `http://localhost:8000` to create your initial `platform_admin` account.
+> **Windows Note:** If ports `8000` or `8080` are reserved by Hyper-V/WinNAT, override them in PowerShell before `docker compose up`:
+> ```powershell
+> $env:ANONIX_PORT="9000"
+> $env:ANONIX_DEMO_PORT="9080"
+> docker compose --profile demo up -d --build
+> ```
 
-To include the optional mock upstream API for testing:
-```bash
-docker compose --profile demo up -d
-```
+1. Verify containers: `docker compose ps` (`postgres`, `redis`, `gateway`, `demo-upstream` should be healthy).
+2. Open `http://localhost:8000` (or `:9000`) to complete the one-time `/setup` wizard and create your `platform_admin` account.
+3. Follow the [5-Minute Live Demo Guide](demo-guide.md) and [Policy Authoring Guide](policies.md) to configure your first policy, group mapping, API key, upstream, and proxy route.
 
 ---
 
-## 2. Option B: Enterprise BYOD (Bring Your Own PostgreSQL / Redis)
+## 3. Scenario B: Enterprise BYOD (Existing PostgreSQL & Optional Redis)
 
-If your organization manages its own PostgreSQL (AWS RDS, Azure Database for PostgreSQL, Cloud SQL, or on-prem) and optionally Redis:
+Use `docker-compose.byod.yml` when your organization runs managed PostgreSQL (AWS RDS, Azure Database, Cloud SQL, or on-prem) and optionally Redis:
 
-1. Create an empty PostgreSQL database and user with DDL permissions.
-2. Generate cryptographic keys:
+1. **Provision an empty database** and user with DDL privileges on your PostgreSQL server.
+2. **Generate production secrets:**
    ```bash
    anonix-gateway keygen >> .env
    ```
-3. Configure `.env`:
+   *(Or generate a Fernet `ANONIX_MASTER_KEY` and random `ANONIX_ADMIN_JWT_SECRET` in your secrets manager.)*
+3. **Configure `.env`:**
    ```env
    ANONIX_ENV=production
    ANONIX_DATABASE_URL=postgresql+asyncpg://anonix_user:strong_pass@db.company.internal:5432/anonix
-   # Optional (omit for built-in in-memory rate limiting):
+   # Optional: omit for built-in in-memory rate limiting
    ANONIX_REDIS_URL=redis://redis.company.internal:6379/0
    ANONIX_ALLOW_PRIVATE_UPSTREAMS=true
    ```
-4. Start only the gateway container:
+4. **Run the gateway container:**
    ```bash
    docker compose -f docker-compose.byod.yml up -d
    ```
-
-Schema tables are initialized automatically on startup (or via `alembic upgrade head`).
+   Tables are created automatically on startup (or you can run `alembic upgrade head` explicitly in CI/CD before rolling out replicas).
 
 ---
 
-## 3. Option C: Single-Node CLI (Without Docker)
+## 4. Scenario C: Single-Node PyPI CLI (No Docker Required)
 
-Requires Python 3.11+:
+Requires **Python 3.11+**:
 
 ```bash
 pip install anonix-gateway
@@ -58,20 +95,31 @@ anonix-gateway init
 anonix-gateway serve --port 8000
 ```
 
-* `anonix-gateway init` generates `.env` secrets, creates the database schema (SQLite `./data/anonix.db` by default if `ANONIX_DATABASE_URL` is blank), and prompts for the first `platform_admin`.
+* `anonix-gateway init` generates `.env` secrets, initializes the database (SQLite `./data/anonix.db` by default if `ANONIX_DATABASE_URL` is blank), and interactively creates the first `platform_admin`.
+* **Headless/CI alternative:** Skip `init` and set `ANONIX_BOOTSTRAP_ADMIN_EMAIL` + `ANONIX_BOOTSTRAP_ADMIN_PASSWORD` in `.env`, then run `anonix-gateway serve`.
+* **Native TLS on a VM:**
+  ```bash
+  anonix-gateway serve --port 8443 --ssl-certfile /etc/certs/fullchain.pem --ssl-keyfile /etc/certs/privkey.pem
+  ```
 
 ---
 
-## 4. Production Hardening Checklist
+## 5. Scenario D: Production TLS & Edge Proxy Integration
 
-* **Required in `ANONIX_ENV=production`:** Set both `ANONIX_MASTER_KEY` and `ANONIX_ADMIN_JWT_SECRET` via environment variables, Kubernetes Secrets, AWS Secrets Manager, or HashiCorp Vault. Startup fails closed if either is missing in production mode.
-* **HTTPS / TLS (3 Options):**
-  1. **Automatic HTTPS with Caddy (`--profile tls` — recommended for single-server Docker):**
-     ```bash
-     ANONIX_DOMAIN=mask.company.com docker compose --profile tls up -d
-     ```
-     Caddy automatically provisions and renews Let's Encrypt TLS 1.3 + HTTP/2/HTTP/3 certificates and proxies to `gateway:8000`.
-  2. **Enterprise Load Balancer / Ingress (recommended for Cloud & Kubernetes):** Place AWS ALB, NGINX Ingress, Traefik, or Kong in front of port `8000` for corporate certs, WAF, and mTLS.
-  3. **Direct TLS on Gateway (standalone / air-gapped VMs):** Set `ANONIX_SSL_CERTFILE` and `ANONIX_SSL_KEYFILE` (or pass `--ssl-certfile` and `--ssl-keyfile` to `anonix-gateway serve`).
-* **Upstream Firewall:** Ensure internal upstream APIs are reachable **only** from Anonix Gateway's subnet/IP so external callers cannot bypass masking.
-* **Probes:** Use `GET /healthz` (liveness) and `GET /readyz` (database readiness).
+1. **Automatic HTTPS with Caddy (`--profile tls`):**
+   ```bash
+   ANONIX_DOMAIN=mask.company.com docker compose --profile tls up -d
+   ```
+   Caddy automatically provisions and renews Let's Encrypt TLS 1.3 certificates and forwards to `gateway:8000`.
+2. **Behind NGINX / Kong / AWS ALB:**
+   Terminate TLS at your corporate load balancer, forward traffic to port `8000`, and (if your edge proxy already authenticates users) configure **Trusted-Proxy Headers**—see [`examples/nginx-trusted-proxy.conf`](../examples/nginx-trusted-proxy.conf) and [Authentication Guide](authentication.md).
+
+---
+
+## 6. Operations & Troubleshooting
+
+* **Probes:** `GET /healthz` (liveness) and `GET /readyz` (verifies database connectivity).
+* **Database Migrations:** `alembic upgrade head`.
+* **Startup fails in production (`RuntimeError`):** Both `ANONIX_MASTER_KEY` and `ANONIX_ADMIN_JWT_SECRET` are mandatory when `ANONIX_ENV=production`.
+* **Upstream `502` or SSRF block:** Internal/VPC upstreams (`10.x`, `172.16.x`, `192.168.x`, `127.0.0.1`) require `ANONIX_ALLOW_PRIVATE_UPSTREAMS=true`.
+* **Upstream `404` on `/proxy/*`:** Check the **Strip prefix** checkbox on your `ProxyRoute`. Uncheck it if the upstream expects the prefix path (e.g. `demo-upstream` serves `/students/{id}`, so `/proxy/students/101` with strip unchecked forwards `/students/101`).
