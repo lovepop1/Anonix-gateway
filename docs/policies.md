@@ -50,7 +50,7 @@ rules:
 
 | Field | Default | Description |
 | :--- | :--- | :--- |
-| `version` | `'1.0'` | Policy schema version (`'1.0'` or `'3.0'`). |
+| `version` | `'1.0'` | Policy schema version (`'1.0'`). |
 | `name` | `null` | Human-readable policy name (informational). |
 | `description` | `null` | Summary of purpose and compliance scope. |
 | `format` | `null` | Optional `'json'`, `'xml'`, `'yaml'`, or `'csv'` for strict load-time selector validation. |
