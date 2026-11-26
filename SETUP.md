@@ -171,6 +171,8 @@ anonix-gateway serve --port 8000
 * **`anonix-gateway migrate`**: Ensures DB schema tables exist.
 * **`anonix-gateway serve`**: Starts Uvicorn (`--host`, `--port`, `--ssl-certfile`, `--ssl-keyfile`).
 
+> **Scope of the CLI:** The `anonix-gateway` CLI manages server lifecycle and initial setup (`keygen`, `init`, `migrate`, `serve`). Once running, policies, group mappings, API keys, auth providers, upstreams, proxy routes, and additional admin users are managed through the **Web Admin Console** or the **REST API (`/api/admin/*`)** using a Bearer JWT from `POST /api/admin/login` (see [API Reference](docs/api-reference.md)).
+
 ### Headless / Unattended CLI Setup (CI or Cloud-Init)
 Skip interactive `init` by setting bootstrap environment variables before `serve`:
 ```bash
