@@ -109,46 +109,66 @@ export function MappingsTab({
       </div>
 
       <div className="card">
-        <h3>Group Mappings</h3>
-        <table>
-          <thead>
-            <tr><th>Group</th><th>Role</th><th>Priority</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {mappings.map((m) => (
-              <tr key={m.id}>
-                <td>{m.external_group}</td>
-                <td>{m.policy_role || "(default)"}</td>
-                <td>{m.priority}</td>
-                <td className="action-cell">
-                  <button
-                    className="btn btn-sm"
-                    onClick={() => {
-                      setEditMapId(m.id);
-                      setMapGroup(m.external_group);
-                      setMapRole(m.policy_role || "");
-                      setMapPolicyId(m.policy_id);
-                      setMapPriority(m.priority);
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="btn btn-sm btn-danger"
-                    onClick={() =>
-                      runAction(async () => {
-                        await api(`/api/admin/group-mappings/${m.id}`, { method: "DELETE" });
-                        await refreshAll();
-                      })
-                    }
-                  >
-                    Delete
-                  </button>
-                </td>
+        <h3>Group Mappings ({mappings.length})</h3>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Group</th>
+                <th>Policy</th>
+                <th>Role</th>
+                <th className="nowrap">Priority</th>
+                <th className="actions-col">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {mappings.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="empty-row">No group mappings configured yet.</td>
+                </tr>
+              ) : (
+                mappings.map((m) => {
+                  const policyName = policies.find((p) => p.id === m.policy_id)?.name || m.policy_id;
+                  return (
+                    <tr key={m.id}>
+                      <td>{m.external_group}</td>
+                      <td>{policyName}</td>
+                      <td>{m.policy_role || "(default)"}</td>
+                      <td className="nowrap">{m.priority}</td>
+                      <td className="actions-col">
+                        <div className="action-buttons">
+                          <button
+                            className="btn btn-sm"
+                            onClick={() => {
+                              setEditMapId(m.id);
+                              setMapGroup(m.external_group);
+                              setMapRole(m.policy_role || "");
+                              setMapPolicyId(m.policy_id);
+                              setMapPriority(m.priority);
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() =>
+                              runAction(async () => {
+                                await api(`/api/admin/group-mappings/${m.id}`, { method: "DELETE" });
+                                await refreshAll();
+                              })
+                            }
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -54,73 +54,86 @@ export function UsersTab({ users, adminEmail, busy, api, runAction, refreshAll, 
       </div>
 
       <div className="card">
-        <h3>Admin Users</h3>
-        <table>
-          <thead>
-            <tr><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {users.map((u) => {
-              const isSelf = u.email === adminEmail;
-              return (
-                <tr key={u.id}>
-                  <td>{u.email} {isSelf ? "(you)" : ""}</td>
-                  <td>
-                    <select
-                      value={u.role}
-                      disabled={isSelf}
-                      onChange={(e) =>
-                        runAction(async () => {
-                          await api(`/api/admin/users/${u.id}`, {
-                            method: "PATCH",
-                            body: JSON.stringify({ role: e.target.value }),
-                          });
-                          await refreshAll();
-                        })
-                      }
-                    >
-                      <option value="platform_admin">platform_admin</option>
-                      <option value="policy_author">policy_author</option>
-                      <option value="auditor">auditor</option>
-                    </select>
-                  </td>
-                  <td>{u.is_active ? "active" : "disabled"}</td>
-                  <td className="action-cell">
-                    {!isSelf && (
-                      <>
-                        <button
-                          className="btn btn-sm"
-                          onClick={() =>
+        <h3>Admin Users ({users.length})</h3>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Role</th>
+                <th className="nowrap">Status</th>
+                <th className="actions-col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="empty-row">No admin users found.</td>
+                </tr>
+              ) : (
+                users.map((u) => {
+                  const isSelf = u.email === adminEmail;
+                  return (
+                    <tr key={u.id}>
+                      <td>{u.email} {isSelf ? "(you)" : ""}</td>
+                      <td>
+                        <select
+                          value={u.role}
+                          disabled={isSelf}
+                          onChange={(e) =>
                             runAction(async () => {
                               await api(`/api/admin/users/${u.id}`, {
                                 method: "PATCH",
-                                body: JSON.stringify({ is_active: !u.is_active }),
+                                body: JSON.stringify({ role: e.target.value }),
                               });
                               await refreshAll();
                             })
                           }
                         >
-                          {u.is_active ? "Disable" : "Enable"}
-                        </button>
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={() =>
-                            runAction(async () => {
-                              await api(`/api/admin/users/${u.id}`, { method: "DELETE" });
-                              await refreshAll();
-                            })
-                          }
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                          <option value="platform_admin">platform_admin</option>
+                          <option value="policy_author">policy_author</option>
+                          <option value="auditor">auditor</option>
+                        </select>
+                      </td>
+                      <td className="nowrap">{u.is_active ? "active" : "disabled"}</td>
+                      <td className="actions-col">
+                        {!isSelf && (
+                          <div className="action-buttons">
+                            <button
+                              className="btn btn-sm"
+                              onClick={() =>
+                                runAction(async () => {
+                                  await api(`/api/admin/users/${u.id}`, {
+                                    method: "PATCH",
+                                    body: JSON.stringify({ is_active: !u.is_active }),
+                                  });
+                                  await refreshAll();
+                                })
+                              }
+                            >
+                              {u.is_active ? "Disable" : "Enable"}
+                            </button>
+                            <button
+                              className="btn btn-sm btn-danger"
+                              onClick={() =>
+                                runAction(async () => {
+                                  await api(`/api/admin/users/${u.id}`, { method: "DELETE" });
+                                  await refreshAll();
+                                })
+                              }
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

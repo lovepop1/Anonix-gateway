@@ -129,50 +129,66 @@ export function UpstreamsTab({ upstreams, busy, api, runAction, refreshAll, setN
       </div>
 
       <div className="card">
-        <h3>Registered Upstreams</h3>
-        <table>
-          <thead>
-            <tr><th>Name</th><th>Base URL</th><th>Auth</th><th>Timeout</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {upstreams.map((u) => (
-              <tr key={u.id}>
-                <td>{u.name}</td>
-                <td>{u.base_url}</td>
-                <td>{u.auth_type}</td>
-                <td>{u.timeout_seconds}s</td>
-                <td className="action-cell">
-                  <button
-                    className="btn btn-sm"
-                    onClick={() => {
-                      setEditUpId(u.id);
-                      setUpName(u.name);
-                      setUpUrl(u.base_url);
-                      setUpAuthType(u.auth_type);
-                      setUpHeaderName(u.auth_header_name || "X-API-Key");
-                      setUpTimeout(u.timeout_seconds || 15);
-                      setUpBasicUser("");
-                      setUpCred("");
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="btn btn-sm btn-danger"
-                    onClick={() =>
-                      runAction(async () => {
-                        await api(`/api/admin/upstreams/${u.id}`, { method: "DELETE" });
-                        await refreshAll();
-                      })
-                    }
-                  >
-                    Delete
-                  </button>
-                </td>
+        <h3>Registered Upstreams ({upstreams.length})</h3>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Base URL</th>
+                <th className="nowrap">Auth</th>
+                <th className="nowrap">Timeout</th>
+                <th className="actions-col">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {upstreams.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="empty-row">No upstreams registered yet.</td>
+                </tr>
+              ) : (
+                upstreams.map((u) => (
+                  <tr key={u.id}>
+                    <td>{u.name}</td>
+                    <td>{u.base_url}</td>
+                    <td className="nowrap">{u.auth_type}</td>
+                    <td className="nowrap">{u.timeout_seconds}s</td>
+                    <td className="actions-col">
+                      <div className="action-buttons">
+                        <button
+                          className="btn btn-sm"
+                          onClick={() => {
+                            setEditUpId(u.id);
+                            setUpName(u.name);
+                            setUpUrl(u.base_url);
+                            setUpAuthType(u.auth_type);
+                            setUpHeaderName(u.auth_header_name || "X-API-Key");
+                            setUpTimeout(u.timeout_seconds || 15);
+                            setUpBasicUser("");
+                            setUpCred("");
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() =>
+                            runAction(async () => {
+                              await api(`/api/admin/upstreams/${u.id}`, { method: "DELETE" });
+                              await refreshAll();
+                            })
+                          }
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

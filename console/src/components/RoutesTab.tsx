@@ -131,52 +131,68 @@ export function RoutesTab({
       </div>
 
       <div className="card">
-        <h3>Active Proxy Routes</h3>
-        <table>
-          <thead>
-            <tr><th>Name</th><th>Prefix</th><th>Methods</th><th>Strip</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {routes.map((r) => (
-              <tr key={r.id}>
-                <td>{r.name}</td>
-                <td>/proxy{r.route_prefix}</td>
-                <td>{r.allowed_methods.join(", ")}</td>
-                <td>{r.strip_prefix ? "yes" : "no"}</td>
-                <td className="action-cell">
-                  <button
-                    className="btn btn-sm"
-                    onClick={() => {
-                      setEditRtId(r.id);
-                      setRtName(r.name);
-                      setRtPrefix(r.route_prefix);
-                      setRtUpstreamId(r.upstream_id);
-                      setRtPolicyId(r.policy_id);
-                      setRtStripPrefix(Boolean(r.strip_prefix));
-                      setRtMethods(r.allowed_methods.join(", "));
-                      setRtBlockedPaths(r.blocked_subpaths.join(", "));
-                      setRtAllowPolicyOverride(Boolean(r.allow_policy_override));
-                      setRtOnUnstructured(r.on_unstructured);
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="btn btn-sm btn-danger"
-                    onClick={() =>
-                      runAction(async () => {
-                        await api(`/api/admin/routes/${r.id}`, { method: "DELETE" });
-                        await refreshAll();
-                      })
-                    }
-                  >
-                    Delete
-                  </button>
-                </td>
+        <h3>Active Proxy Routes ({routes.length})</h3>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Prefix</th>
+                <th>Methods</th>
+                <th className="nowrap">Strip</th>
+                <th className="actions-col">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {routes.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="empty-row">No proxy routes configured yet.</td>
+                </tr>
+              ) : (
+                routes.map((r) => (
+                  <tr key={r.id}>
+                    <td>{r.name}</td>
+                    <td>/proxy{r.route_prefix}</td>
+                    <td>{r.allowed_methods.join(", ")}</td>
+                    <td className="nowrap">{r.strip_prefix ? "yes" : "no"}</td>
+                    <td className="actions-col">
+                      <div className="action-buttons">
+                        <button
+                          className="btn btn-sm"
+                          onClick={() => {
+                            setEditRtId(r.id);
+                            setRtName(r.name);
+                            setRtPrefix(r.route_prefix);
+                            setRtUpstreamId(r.upstream_id);
+                            setRtPolicyId(r.policy_id);
+                            setRtStripPrefix(Boolean(r.strip_prefix));
+                            setRtMethods(r.allowed_methods.join(", "));
+                            setRtBlockedPaths(r.blocked_subpaths.join(", "));
+                            setRtAllowPolicyOverride(Boolean(r.allow_policy_override));
+                            setRtOnUnstructured(r.on_unstructured);
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() =>
+                            runAction(async () => {
+                              await api(`/api/admin/routes/${r.id}`, { method: "DELETE" });
+                              await refreshAll();
+                            })
+                          }
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

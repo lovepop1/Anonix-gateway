@@ -113,58 +113,76 @@ export function KeysTab({ apiKeys, policies, busy, api, runAction, refreshAll, s
       </div>
 
       <div className="card">
-        <h3>API Keys</h3>
-        <table>
-          <thead>
-            <tr><th>Name</th><th>Prefix</th><th>Groups</th><th>Status</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {apiKeys.map((k) => (
-              <tr key={k.id}>
-                <td>{k.name}</td>
-                <td>{k.key_prefix}…</td>
-                <td>{k.groups.join(", ")}</td>
-                <td>{k.is_active ? "active" : "revoked"}</td>
-                <td className="action-cell">
-                  <button
-                    className="btn btn-sm"
-                    onClick={() => {
-                      setEditKeyId(k.id);
-                      setKeyName(k.name);
-                      setKeyGroups(k.groups.join(", "));
-                    }}
-                  >
-                    Edit
-                  </button>
-                  {k.is_active && (
-                    <button
-                      className="btn btn-sm"
-                      onClick={() =>
-                        runAction(async () => {
-                          await api(`/api/admin/api-keys/${k.id}/revoke`, { method: "POST" });
-                          await refreshAll();
-                        })
-                      }
-                    >
-                      Revoke
-                    </button>
-                  )}
-                  <button
-                    className="btn btn-sm btn-danger"
-                    onClick={() =>
-                      runAction(async () => {
-                        await api(`/api/admin/api-keys/${k.id}`, { method: "DELETE" });
-                        await refreshAll();
-                      })
-                    }
-                  >
-                    Delete
-                  </button>
-                </td>
+        <h3>API Keys ({apiKeys.length})</h3>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th className="nowrap">Prefix</th>
+                <th>Groups</th>
+                <th className="nowrap">Status</th>
+                <th className="actions-col">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {apiKeys.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="empty-row">No API keys created yet.</td>
+                </tr>
+              ) : (
+                apiKeys.map((k) => (
+                  <tr key={k.id}>
+                    <td>{k.name}</td>
+                    <td className="nowrap"><code>{k.key_prefix}…</code></td>
+                    <td>{k.groups.join(", ")}</td>
+                    <td className="nowrap">{k.is_active ? "active" : "revoked"}</td>
+                    <td className="actions-col">
+                      <div className="action-buttons">
+                        <button
+                          className="btn btn-sm"
+                          onClick={() => {
+                            setEditKeyId(k.id);
+                            setKeyName(k.name);
+                            setKeyGroups(k.groups.join(", "));
+                          }}
+                        >
+                          Edit
+                        </button>
+                        {k.is_active && (
+                          <button
+                            className="btn btn-sm"
+                            onClick={() =>
+                              runAction(async () => {
+                                await api(`/api/admin/api-keys/${k.id}/revoke`, { method: "POST" });
+                                setNotice(`API key '${k.name}' revoked.`);
+                                await refreshAll();
+                              })
+                            }
+                          >
+                            Revoke
+                          </button>
+                        )}
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() =>
+                            runAction(async () => {
+                              await api(`/api/admin/api-keys/${k.id}`, { method: "DELETE" });
+                              setNotice(`API key '${k.name}' deleted.`);
+                              await refreshAll();
+                            })
+                          }
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

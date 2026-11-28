@@ -146,65 +146,85 @@ export function PoliciesTab({ policies, busy, api, runAction, refreshAll, setNot
 
       <div className="card full-span">
         <h3>Saved Policies ({policies.length})</h3>
-        <table>
-          <thead>
-            <tr><th>Name</th><th>Description</th><th>Active</th><th>Versions</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {policies.map((p) => {
-              const activeVer = p.versions.find((v) => v.status === "active");
-              return (
-                <tr key={p.id}>
-                  <td>{p.name}</td>
-                  <td>{p.description || "-"}</td>
-                  <td>v{activeVer?.version_number ?? "-"}</td>
-                  <td>
-                    {p.versions.map((v) => (
-                      <button
-                        key={v.id}
-                        className="btn btn-sm ver-btn"
-                        style={{ opacity: v.status === "active" ? 1 : 0.6 }}
-                        onClick={() =>
-                          runAction(async () => {
-                            await api(`/api/admin/policies/${p.id}/versions/${v.version_number}/activate`, {
-                              method: "POST",
-                            });
-                            await refreshAll();
-                          })
-                        }
-                      >
-                        v{v.version_number}{v.status === "active" ? " *" : ""}
-                      </button>
-                    ))}
-                  </td>
-                  <td className="action-cell">
-                    <button
-                      className="btn btn-sm"
-                      onClick={() => {
-                        setEditPolId(p.id);
-                        setPolName(p.name);
-                        setPolYaml(activeVer?.yaml_content || DEFAULT_YAML);
-                      }}
-                    >
-                      Edit / New Version
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() =>
-                        runAction(async () => {
-                          await api(`/api/admin/policies/${p.id}`, { method: "DELETE" });
-                          await refreshAll();
-                        })
-                      }
-                    >
-                      Delete
-                    </button>
-                  </td>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th className="nowrap">Active</th>
+                <th>Versions</th>
+                <th className="actions-col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {policies.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="empty-row">No policies created yet.</td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              ) : (
+                policies.map((p) => {
+                  const activeVer = p.versions.find((v) => v.status === "active");
+                  return (
+                    <tr key={p.id}>
+                      <td>{p.name}</td>
+                      <td>{p.description || "-"}</td>
+                      <td className="nowrap">v{activeVer?.version_number ?? "-"}</td>
+                      <td>
+                        <div className="version-list">
+                          {p.versions.map((v) => (
+                            <button
+                              key={v.id}
+                              className="btn btn-sm"
+                              style={{ opacity: v.status === "active" ? 1 : 0.6 }}
+                              onClick={() =>
+                                runAction(async () => {
+                                  await api(`/api/admin/policies/${p.id}/versions/${v.version_number}/activate`, {
+                                    method: "POST",
+                                  });
+                                  setNotice(`Activated v${v.version_number} for '${p.name}'.`);
+                                  await refreshAll();
+                                })
+                              }
+                            >
+                              v{v.version_number}{v.status === "active" ? " *" : ""}
+                            </button>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="actions-col">
+                        <div className="action-buttons">
+                          <button
+                            className="btn btn-sm"
+                            onClick={() => {
+                              setEditPolId(p.id);
+                              setPolName(p.name);
+                              setPolYaml(activeVer?.yaml_content || DEFAULT_YAML);
+                            }}
+                          >
+                            Edit / New Version
+                          </button>
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() =>
+                              runAction(async () => {
+                                await api(`/api/admin/policies/${p.id}`, { method: "DELETE" });
+                                setNotice(`Deleted policy '${p.name}'.`);
+                                await refreshAll();
+                              })
+                            }
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

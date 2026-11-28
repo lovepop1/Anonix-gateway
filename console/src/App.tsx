@@ -108,6 +108,18 @@ export default function App() {
     }
   }, [token, refreshAll]);
 
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(""), 4500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
+  useEffect(() => {
+    if (!error) return;
+    const timer = window.setTimeout(() => setError(""), 8000);
+    return () => window.clearTimeout(timer);
+  }, [error]);
+
   async function handleSetup(e: React.FormEvent) {
     e.preventDefault();
     await runAction(async () => {
@@ -192,12 +204,34 @@ export default function App() {
         <button className="btn btn-sm" onClick={logout}>Sign Out</button>
       </div>
 
-      {error && <div className="alert alert-err">{error}</div>}
-      {notice && <div className="alert alert-ok">{notice}</div>}
+      {error && (
+        <div className="alert alert-err" role="alert">
+          <span className="alert-body">{error}</span>
+          <button type="button" className="alert-close" aria-label="Dismiss error" onClick={() => setError("")}>
+            ×
+          </button>
+        </div>
+      )}
+      {notice && (
+        <div className="alert alert-ok" role="status">
+          <span className="alert-body">{notice}</span>
+          <button type="button" className="alert-close" aria-label="Dismiss notice" onClick={() => setNotice("")}>
+            ×
+          </button>
+        </div>
+      )}
 
       <div className="tabs">
         {TABS.map((t) => (
-          <button key={t} className={`tab ${tab === t ? "active" : ""}`} onClick={() => setTab(t)}>
+          <button
+            key={t}
+            className={`tab ${tab === t ? "active" : ""}`}
+            onClick={() => {
+              setTab(t);
+              setError("");
+              setNotice("");
+            }}
+          >
             {t.toUpperCase()}
           </button>
         ))}

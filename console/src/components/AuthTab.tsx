@@ -143,64 +143,79 @@ export function AuthTab({ providers, busy, api, runAction, refreshAll, setNotice
       </div>
 
       <div className="card">
-        <h3>Configured Providers</h3>
-        <table>
-          <thead>
-            <tr><th>Name</th><th>Type</th><th>Status</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {providers.map((p) => (
-              <tr key={p.id}>
-                <td>{p.name}</td>
-                <td>{p.provider_type}</td>
-                <td>{p.is_enabled ? "enabled" : "disabled"}</td>
-                <td className="action-cell">
-                  <button
-                    className="btn btn-sm"
-                    onClick={() =>
-                      runAction(async () => {
-                        await api(`/api/admin/auth-providers/${p.id}`, {
-                          method: "PATCH",
-                          body: JSON.stringify({ is_enabled: !p.is_enabled }),
-                        });
-                        await refreshAll();
-                      })
-                    }
-                  >
-                    {p.is_enabled ? "Disable" : "Enable"}
-                  </button>
-                  <button
-                    className="btn btn-sm"
-                    onClick={() => {
-                      setEditProvId(p.id);
-                      setProvName(p.name);
-                      setProvType(p.provider_type);
-                      setIssuerUrl(p.issuer_url || "");
-                      setJwksUrl(p.jwks_url || "");
-                      setAudience(p.audience || "");
-                      setGroupsClaim(p.groups_claim || "groups");
-                      setSubClaim(p.sub_claim || "sub");
-                      setTrustedCidrs((p.trusted_cidrs || []).join(", "));
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="btn btn-sm btn-danger"
-                    onClick={() =>
-                      runAction(async () => {
-                        await api(`/api/admin/auth-providers/${p.id}`, { method: "DELETE" });
-                        await refreshAll();
-                      })
-                    }
-                  >
-                    Delete
-                  </button>
-                </td>
+        <h3>Configured Providers ({providers.length})</h3>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th className="nowrap">Type</th>
+                <th className="nowrap">Status</th>
+                <th className="actions-col">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {providers.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="empty-row">No auth providers configured yet.</td>
+                </tr>
+              ) : (
+                providers.map((p) => (
+                  <tr key={p.id}>
+                    <td>{p.name}</td>
+                    <td className="nowrap">{p.provider_type}</td>
+                    <td className="nowrap">{p.is_enabled ? "enabled" : "disabled"}</td>
+                    <td className="actions-col">
+                      <div className="action-buttons">
+                        <button
+                          className="btn btn-sm"
+                          onClick={() =>
+                            runAction(async () => {
+                              await api(`/api/admin/auth-providers/${p.id}`, {
+                                method: "PATCH",
+                                body: JSON.stringify({ is_enabled: !p.is_enabled }),
+                              });
+                              await refreshAll();
+                            })
+                          }
+                        >
+                          {p.is_enabled ? "Disable" : "Enable"}
+                        </button>
+                        <button
+                          className="btn btn-sm"
+                          onClick={() => {
+                            setEditProvId(p.id);
+                            setProvName(p.name);
+                            setProvType(p.provider_type);
+                            setIssuerUrl(p.issuer_url || "");
+                            setJwksUrl(p.jwks_url || "");
+                            setAudience(p.audience || "");
+                            setGroupsClaim(p.groups_claim || "groups");
+                            setSubClaim(p.sub_claim || "sub");
+                            setTrustedCidrs((p.trusted_cidrs || []).join(", "));
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() =>
+                            runAction(async () => {
+                              await api(`/api/admin/auth-providers/${p.id}`, { method: "DELETE" });
+                              await refreshAll();
+                            })
+                          }
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
